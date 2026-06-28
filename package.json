@@ -1,0 +1,32 @@
+{
+  "name": "nodaw-5in1",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node -e \"import{copyFileSync}from'fs';copyFileSync('dist/index.html','dist/404.html')\"",
+    "preview": "vite preview",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:build:android": "npx cap build android",
+    "tauri:dev": "npx tauri dev",
+    "tauri:build": "npx tauri build"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/core": "^8.0.0",
+    "framer-motion": "^12.0.0",
+    "lucide-react": "^0.400.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-router-dom": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

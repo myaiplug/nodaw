@@ -1,0 +1,8 @@
+{
+  "name": "NoDAW - Premium Audio Suite",
+  "description": "A futuristic, professional-grade audio application for conversion, trimming, A/B comparison, and multi-track editing with an elegant off-white aesthetic.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": []
+}

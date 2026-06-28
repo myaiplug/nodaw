@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.cache/
+*.log
+.env
+.env.local
+android/
+ios/
+src-tauri/target/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
