@@ -32,7 +32,7 @@ const App: React.FC = () => {
   const [targetFormat, setTargetFormat] = useState<{ ext: string; mime: string }>({ ext: '', mime: '' });
   
   const [previewEffectIds, setPreviewEffectIds] = useState<string[]>([]);
-  const [effectParams, setEffectParams] = useState<Record<string, Record<string, number>> >({
+  const [effectParams, setEffectParams] = useState<Record<string, Record<string, number>>>({
     'inst-bass': { freq: 160, gain: 3.5, drive: 1.1 },
     'vocal-deep': { detune: -700, gain: 5 },
     'proc-width': { width: 1.6 },
@@ -422,7 +422,7 @@ const App: React.FC = () => {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <div className="w-16 h-16 gradient-bg rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-xl">
-              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343-2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
+              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
             </div>
             <h3 className="text-2xl font-outfit font-bold text-slate-800 mb-2">Audio Loaded</h3>
             <p className="text-slate-400 text-sm mb-8">Your audio file is ready. Which tool would you like to use first?</p>
