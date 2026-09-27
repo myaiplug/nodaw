@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, type CSSProperties } from 'react';
 
 interface AdUnitProps {
   slot: string;
   format?: 'auto' | 'horizontal' | 'vertical' | 'rectangle';
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }
 
 // Google AdSense publisher ID
