@@ -1,10 +1,11 @@
-
 export enum AppTab {
-  CONVERT = 'Convert',
   TRIM = 'Trim',
-  COMPARE = 'A/B Compare',
-  EFFECTS = 'One-Click Effects',
-  MULTITRACK = 'Multi-Track Grid'
+  CONVERT = 'Convert',
+  EFFECTS = 'FX',
+  COMPARE = 'A/B',
+  LUFS = 'LUFS',
+  SPLIT = 'Split',
+  MULTITRACK = 'Multi-Track',
 }
 
 export interface AudioTrack {
@@ -13,7 +14,7 @@ export interface AudioTrack {
   volume: number;
   muted: boolean;
   solo: boolean;
-  data: number[]; // Normalized samples for visualization
+  data: number[];
   color?: string;
 }
 
@@ -23,4 +24,36 @@ export interface EffectWorkflow {
   category: 'Instrumental' | 'Vocals' | 'Both' | 'Mastering';
   description: string;
   icon: string;
+}
+
+/** Saved export / portfolio item (local + optional cloud). */
+export interface ExportRecord {
+  id: string;
+  userId: string | null;
+  title: string;
+  tool: AppTab | string;
+  createdAt: string;
+  durationSec?: number;
+  sampleRate?: number;
+  channels?: number;
+  /** Public on profile when true */
+  isPublic: boolean;
+  /** Optional remote blob URL once uploaded */
+  audioUrl?: string;
+  /** Small waveform peaks for profile cards */
+  peaks?: number[];
+  mimeType?: string;
+  byteLength?: number;
+  /** Marketplace listing stub */
+  forSale?: boolean;
+  priceCents?: number;
+}
+
+export interface PublicProfile {
+  userId: string;
+  handle: string;
+  displayName: string;
+  bio?: string;
+  avatarUrl?: string;
+  exports: ExportRecord[];
 }

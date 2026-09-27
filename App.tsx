@@ -3,9 +3,16 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { AppTab } from './types';
 import { ConvertTab, TrimTab, CompareTab, EffectsTab, MultiTrackTab } from './components/Tabs';
 import { PeakMeter, SpectralAnalyzer } from './components/Visualizer';
+import { SplitTab } from './components/SplitTab';
+import { LufsTab } from './components/LufsTab';
+import { AuthBar, SaveExportButton } from './components/AuthBar';
+import { AUTH_ENABLED } from './lib/feature-flags';
+import { defaultExportTitle, peaksFromBuffer, saveExport } from './lib/exports-store';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<AppTab>(AppTab.CONVERT);
+  const [activeTab, setActiveTab] = useState<AppTab>(AppTab.TRIM);
+  const [savingExport, setSavingExport] = useState(false);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [bufferHistory, setBufferHistory] = useState<AudioBuffer[]>([]);
   
@@ -289,6 +296,48 @@ const App: React.FC = () => {
     updateBufferWithHistory(renderedBuffer);
   };
 
+  const handleSaveExport = async () => {
+    if (!audioBuffer) return;
+    setSavingExport(true);
+    setSaveNotice(null);
+    try {
+      let uid: string | null = null;
+      let getToken: (() => Promise<string | null>) | undefined;
+      let handle = 'local';
+      if (AUTH_ENABLED) {
+        const clerk = await import('@clerk/react');
+        // session from Clerk global — prefer window.Clerk if available
+        const w = window as unknown as { Clerk?: { user?: { id: string; username?: string | null; primaryEmailAddress?: { emailAddress: string } | null }; session?: { getToken: () => Promise<string | null> } } };
+        uid = w.Clerk?.user?.id || null;
+        getToken = w.Clerk?.session ? () => w.Clerk!.session!.getToken() : async () => null;
+        handle =
+          w.Clerk?.user?.username ||
+          w.Clerk?.user?.primaryEmailAddress?.emailAddress?.split('@')[0] ||
+          uid ||
+          'local';
+        void clerk;
+      }
+      await saveExport(
+        {
+          userId: uid,
+          title: defaultExportTitle(fileName, activeTab),
+          tool: activeTab,
+          durationSec: audioBuffer.duration,
+          sampleRate: audioBuffer.sampleRate,
+          channels: audioBuffer.numberOfChannels,
+          isPublic: false,
+          peaks: peaksFromBuffer(audioBuffer),
+        },
+        getToken,
+      );
+      setSaveNotice(`Saved to portfolio${uid ? '' : ' (local)'} · /u/${handle}`);
+    } catch (err) {
+      setSaveNotice(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSavingExport(false);
+    }
+  };
+
   const renderTabContent = () => {
     const commonProps = {
       buffer: audioBuffer,
@@ -317,10 +366,12 @@ const App: React.FC = () => {
     };
 
     switch (activeTab) {
-      case AppTab.CONVERT: return <ConvertTab onFileLoaded={handleAudioLoad} />;
       case AppTab.TRIM: return <TrimTab {...commonProps} />;
-      case AppTab.COMPARE: return <CompareTab {...commonProps} />;
+      case AppTab.CONVERT: return <ConvertTab onFileLoaded={handleAudioLoad} />;
       case AppTab.EFFECTS: return <EffectsTab {...commonProps} />;
+      case AppTab.COMPARE: return <CompareTab {...commonProps} />;
+      case AppTab.LUFS: return <LufsTab buffer={audioBuffer} ctx={audioContext} onUpdateBuffer={updateBufferWithHistory} onUpload={() => fileInputRef.current?.click()} />;
+      case AppTab.SPLIT: return <SplitTab />;
       case AppTab.MULTITRACK: return <MultiTrackTab {...commonProps} />;
       default: return null;
     }
@@ -329,34 +380,44 @@ const App: React.FC = () => {
   return (
     <div className="h-screen flex flex-col bg-[#FDFDFD] overflow-hidden font-inter text-slate-900">
       <input type="file" ref={fileInputRef} className="hidden" accept="audio/*" onChange={(e) => e.target.files?.[0] && handleAudioLoad(e.target.files[0])} />
-      <header className="flex-none bg-white border-b border-slate-100 shadow-sm relative z-50 h-16 flex items-center justify-between px-8">
-        <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setActiveTab(AppTab.CONVERT)}>
+      <header className="flex-none bg-white border-b border-slate-100 shadow-sm relative z-50 min-h-14 sm:h-16 flex flex-wrap items-center justify-between gap-2 px-3 sm:px-6 lg:px-8 py-2">
+        <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
+          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setActiveTab(AppTab.TRIM)}>
             <div className="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center shadow-lg"><svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg></div>
-            <span className="text-xl font-outfit font-bold tracking-tight text-slate-800">NoDAW</span>
+            <span className="text-lg sm:text-xl font-outfit font-bold tracking-tight text-slate-800">NoDAW</span>
           </div>
         </div>
-        <nav className="flex space-x-1 bg-slate-100/50 p-1 rounded-full">
+        <nav className="order-3 sm:order-none w-full sm:w-auto flex space-x-1 bg-slate-100/50 p-1 rounded-full overflow-x-auto max-w-full scrollbar-thin">
           {Object.values(AppTab).map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-1.5 rounded-full font-outfit font-bold text-[10px] uppercase tracking-wider transition-all ${activeTab === tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{tab}</button>
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`shrink-0 px-3 sm:px-4 py-1.5 rounded-full font-outfit font-bold text-[9px] sm:text-[10px] uppercase tracking-wider transition-all ${activeTab === tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{tab}</button>
           ))}
         </nav>
-        <div className="flex items-center space-x-4">
-           <SpectralAnalyzer isPlaying={isPlaying} analyser={analyser || undefined} width={120} height={30} />
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+           <SaveExportButton disabled={!audioBuffer} saving={savingExport} onSave={handleSaveExport} />
+           <div className="hidden md:block">
+             <SpectralAnalyzer isPlaying={isPlaying} analyser={analyser || undefined} width={100} height={28} />
+           </div>
+           <AuthBar />
         </div>
       </header>
+      {saveNotice && (
+        <div className="flex-none px-4 py-2 bg-emerald-50 border-b border-emerald-100 text-[11px] font-mono text-emerald-700 flex justify-between gap-3">
+          <span>{saveNotice}</span>
+          <button type="button" className="underline shrink-0" onClick={() => setSaveNotice(null)}>dismiss</button>
+        </div>
+      )}
       <main className="flex-1 overflow-hidden relative flex items-center justify-center">
         {/* Absolute Centering Wrapper */}
-        <div className="w-full h-full flex items-center justify-center overflow-y-auto custom-scrollbar px-6">
-           <div className="w-full max-w-5xl py-12">
+        <div className="w-full h-full flex items-center justify-center overflow-y-auto custom-scrollbar px-3 sm:px-6">
+           <div className="w-full max-w-5xl py-6 sm:py-12">
              {renderTabContent()}
            </div>
         </div>
       </main>
       
       {showDownloadModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => processPendingFile(AppTab.TRIM)}>
-          <div className="bg-white rounded-[40px] p-10 max-w-lg w-full shadow-3xl text-center relative animate-in zoom-in slide-in-from-bottom-4 duration-500" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300 p-4" onClick={() => processPendingFile(AppTab.TRIM)}>
+          <div className="bg-white rounded-[28px] sm:rounded-[40px] p-6 sm:p-10 max-w-lg w-full shadow-3xl text-center relative animate-in zoom-in slide-in-from-bottom-4 duration-500 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => processPendingFile(AppTab.TRIM)} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
@@ -365,7 +426,7 @@ const App: React.FC = () => {
             </div>
             <h3 className="text-2xl font-outfit font-bold text-slate-800 mb-2">Audio Loaded</h3>
             <p className="text-slate-400 text-sm mb-8">Your audio file is ready. Which tool would you like to use first?</p>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 px-1">
               <button onClick={() => processPendingFile(AppTab.TRIM)} className="p-6 rounded-2xl border border-slate-100 hover:border-cyan-500 hover:shadow-lg transition-all group flex flex-col items-center">
                  <div className="w-12 h-12 rounded-full bg-slate-50 group-hover:bg-cyan-50 flex items-center justify-center mb-4 transition-colors">
                    <svg className="w-6 h-6 text-slate-400 group-hover:text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" x2="8.12" y1="4" y2="15.88"/><line x1="14.47" x2="20" y1="14.48" y2="20"/><line x1="8.12" x2="12" y1="8.12" y2="12"/></svg>
