@@ -28,7 +28,7 @@ export type ConnectStatus =
 
 export function getMarketplaceStatus(): ConnectStatus {
   if (!MARKETPLACE_ENABLED) {
-    return { enabled: false; reason: 'Marketplace flag off (VITE_MARKETPLACE_ENABLED)' };
+    return { enabled: false, reason: 'Marketplace flag off (VITE_MARKETPLACE_ENABLED)' };
   }
   return {
     enabled: true,
