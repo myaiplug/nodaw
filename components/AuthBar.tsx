@@ -76,6 +76,6 @@ export const SaveExportButton: React.FC<{
     className="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed"
     title="Save this edit to your portfolio (opt-in)"
   >
-    {saving ? 'Saving...' : 'Save export'}
+    {saving ? 'Saving…' : 'Save export'}
   </button>
 );
