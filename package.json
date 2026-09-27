@@ -5,19 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node -e \"import{copyFileSync}from'fs';copyFileSync('dist/index.html','dist/404.html')\"",
+    "build": "vite build && node scripts/copy-ort-wasm.mjs && node -e \"import{copyFileSync}from'fs';copyFileSync('dist/index.html','dist/404.html')\"",
     "preview": "vite preview",
     "cap:sync": "npx cap sync",
     "cap:open:android": "npx cap open android",
     "cap:build:android": "npx cap build android",
     "tauri:dev": "npx tauri dev",
-    "tauri:build": "npx tauri build"
+    "tauri:build": "npx tauri build",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
     "@capacitor/core": "^8.0.0",
+    "@clerk/react": "^6.17.2",
     "framer-motion": "^12.0.0",
     "lucide-react": "^0.400.0",
+    "onnxruntime-web": "^1.21.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-router-dom": "^7.0.0"
